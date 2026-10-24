@@ -1,0 +1,84 @@
+Les tâches :
+➢ Collecter des données web (web scraping)
+➢ Implémenter une architecture de données distribuée
+➢ Mettre en place un Data Lake
+➢ Construire une architecture Médaillon
+➢ Implémenter ETL / ELT
+➢ Gérer batch et streaming
+➢ Assurer qualité et gouvernance des données
+Exemples de sites d’actualité
+- Marocain : Akhbarona, Hespress, Lakom, Barlamane
+- International : Al Jazeera, CNN, BBC News, Reuters
+Données collectées :
+➢ Titre article
+➢ Auteur
+➢ Date publication
+➢ Catégorie
+➢ Contenu
+➢ Source
+➢ Url
+➢ ... etc
+1. Data Sources
+Un scraper doit être développé pour collecter automatiquement les articles.
+Scraping web : Python + BeautifulSoup / Scrapy
+
+2. Ingestion
+Les données doivent être ingérées via deux modes :
+➢ Batch ingestion : Scraping programmé toutes les heures.
+➢ Streaming ingestion : Chaque article publié est envoyé comme événement.
+3. Data Lake
+Les données brutes doivent être stockées dans un Data Lake afin de conserver l’historique
+complet des informations collectées.
+Stockage possible :
+➢ MinIO
+➢ HDFS
+➢ S3
+➢ ...etc
+4. Architecture Médaillon
+- Bronze : Articles bruts.
+- Silver : Nettoyage
+➢ Suppression HTML
+➢ Normalisation texte
+➢ Détection langue
+- Gold : Tables analytiques
+➢ Tendances news
+➢ Top sujets
+➢ Nombre articles par source
+➢ ...etc
+
+5. Transformation des données
+Les transformations des données peuvent être réalisées à l’aide de langages tels que Python
+ou SQL, ou d’autres technologies similaires, afin de nettoyer, normaliser et enrichir les
+données.
+6. Orchestration
+Les pipelines doivent être orchestrés avec Apache Airflow afin de planifier et
+superviser les traitements.
+
+7. Data Warehouse
+Les données analytiques doivent être stockées dans un Data Warehouse pour faciliter
+les analyses décisionnelles.
+Tables analytiques :
+➢ Articles par jour
+➢ Articles par thème
+➢ Articles par pays
+8. Visualisation
+Des tableaux de bord doivent être créés afin de visualiser les tendances et indicateurs
+clés issus des articles collectés.
+Dashboards :
+➢ Tendances d’actualité
+➢ Nombre articles par source
+➢ Mots clés les plus fréquents
+9. Qualité des données
+Des contrôles doivent être mis en place pour vérifier la complétude, la cohérence et la
+validité des données.
+- Tests :
+➢ Article sans titre
+➢ Date manquante
+➢ Contenu trop court
+- Dimensions :
+➢ Complétude
+➢ Cohérence
+➢ Validité
+10. Gouvernance
+Les données doivent être documentées et leur traçabilité assurée afin de garantir la
+transparence du pipeline.

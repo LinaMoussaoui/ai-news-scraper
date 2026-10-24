@@ -1,0 +1,42 @@
+﻿# Web Scraping
+requests
+beautifulsoup4
+feedparser
+playwright
+lxml
+html2text
+
+# Data Processing
+pandas
+
+# Data Storage & Warehousing
+minio
+psycopg2-binary
+redis
+aioredis
+
+# Language Detection
+langdetect
+
+# API Framework
+fastapi
+uvicorn
+pydantic
+
+# Orchestration
+apache-airflow
+apache-airflow-providers-apache-spark
+
+# Environment & Config
+python-dotenv
+
+# Logging & Monitoring
+python-json-logger
+
+# Testing
+pytest
+pytest-asyncio
+httpx
+
+# Utilities
+click

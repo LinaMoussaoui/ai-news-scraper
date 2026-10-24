@@ -1,0 +1,10 @@
+requests
+beautifulsoup4
+feedparser
+lxml
+html2text
+minio
+psycopg2-binary
+langdetect
+python-dotenv
+pandas

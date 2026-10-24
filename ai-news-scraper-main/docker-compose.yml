@@ -1,0 +1,229 @@
+﻿services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis-ai-news
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio-ai-news
+    ports:
+      - "9005:9000"
+      - "9006:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-ai-news
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-airy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airypass123}
+      POSTGRES_DB: ${POSTGRES_DATABASE:-ai_news_warehouse}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U airy -d ai_news_warehouse" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  airflow-postgres:
+    image: postgres:15
+    container_name: airflow-postgres-ai-news
+    environment:
+      POSTGRES_USER: ${AIRFLOW_POSTGRES_USER:-airflow}
+      POSTGRES_PASSWORD: ${AIRFLOW_POSTGRES_PASSWORD:-airflow}
+      POSTGRES_DB: ${AIRFLOW_POSTGRES_DB:-airflow}
+    volumes:
+      - ./data/airflow/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U airflow -d airflow" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  airflow-init:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-init-ai-news
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/project/backend/services/orchestration
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow}@airflow-postgres:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:-ai-news-airflow-secret}
+      AIRFLOW__WEBSERVER__WORKERS: "1"
+      PYTHONPATH: /opt/airflow/project
+    volumes:
+      - ./:/opt/airflow/project
+      - ./data/airflow/logs:/opt/airflow/logs
+      - ./data/airflow/plugins:/opt/airflow/plugins
+    command: >
+      bash -c "airflow db migrate && airflow users create --username admin --password admin123 --firstname Admin --lastname User --role Admin --email admin@example.com || true"
+    restart: "no"
+
+  airflow-bootstrap:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-bootstrap-ai-news
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      airflow-scheduler:
+        condition: service_started
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/project/backend/services/orchestration
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow}@airflow-postgres:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:-ai-news-airflow-secret}
+      PYTHONPATH: /opt/airflow/project
+    volumes:
+      - ./:/opt/airflow/project
+      - ./data/airflow/logs:/opt/airflow/logs
+      - ./data/airflow/plugins:/opt/airflow/plugins
+    command: python /opt/airflow/project/scripts/airflow_bootstrap.py
+    restart: "no"
+
+  airflow-webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-webserver-ai-news
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/project/backend/services/orchestration
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow}@airflow-postgres:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:-ai-news-airflow-secret}
+      PYTHONPATH: /opt/airflow/project
+    volumes:
+      - ./:/opt/airflow/project
+      - ./data/airflow/logs:/opt/airflow/logs
+      - ./data/airflow/plugins:/opt/airflow/plugins
+    ports:
+      - "8080:8080"
+    command: webserver
+    restart: unless-stopped
+
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-scheduler-ai-news
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/project/backend/services/orchestration
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow}@airflow-postgres:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:-ai-news-airflow-secret}
+      PYTHONPATH: /opt/airflow/project
+    volumes:
+      - ./:/opt/airflow/project
+      - ./data/airflow/logs:/opt/airflow/logs
+      - ./data/airflow/plugins:/opt/airflow/plugins
+    command: scheduler
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-ai-news
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: "True"
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend-ai-news
+    ports:
+      - "8000:8000"
+    environment:
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MINIO_SECURE: ${MINIO_SECURE:-False}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-airy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-airypass123}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE:-ai_news_warehouse}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      API_HOST: ${API_HOST:-0.0.0.0}
+      API_PORT: ${API_PORT:-8000}
+    volumes:
+      - ./logs:/app/logs
+      - ./backend:/app/backend
+    depends_on:
+      minio:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:8000}
+    container_name: frontend-ai-news
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  minio_data:
+  redis_data:

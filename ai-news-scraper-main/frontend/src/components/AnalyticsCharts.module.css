@@ -1,0 +1,124 @@
+.chartCard {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  height: 100%;
+  transition: box-shadow var(--duration) var(--ease);
+}
+
+.chartCard:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chartTitle {
+  font-size: var(--fs-base);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.chartBadge {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 2px 8px;
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+}
+
+.chartBody {
+  flex: 1;
+  min-height: 200px;
+}
+
+.chartBodySquare {
+  flex: 1;
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chartBodyTall {
+  flex: 1;
+  min-height: 300px;
+}
+
+.empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-style: italic;
+}
+
+/* Tools Bar Chart Styles */
+.toolsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.toolRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  animation: fadeIn 0.4s var(--ease) both;
+}
+
+.toolInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.toolRank {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  width: 20px;
+}
+
+.toolName {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toolBar {
+  flex: 1;
+  height: 8px;
+  background: var(--surface-alt);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.toolFill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 1s var(--ease);
+}
+
+.toolCount {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  width: 30px;
+  text-align: right;
+}

@@ -1,0 +1,75 @@
+```mermaid
+flowchart LR
+  subgraph Frontend
+    FE[Next.js / frontend]
+  end
+
+  subgraph Backend
+    BE[FastAPI (backend/main.py)]
+    Routes[Routes: ingestion, scraping, transformation, analytics, realtime, health]
+    Services[Services layer]
+    Utils[Utils: logger, api_errors, clients]
+    Tests[Tests]
+  end
+
+  subgraph Orchestration
+    Airflow[Airflow]
+    DAG1[bronze_ingestion_dag]
+    DAG2[silver_transformation_dag]
+    DAG3[gold_analytics_dag]
+  end
+
+  subgraph DataStorage
+    MinIO[MinIO (object storage / ai-news-warehouse)]
+    Postgres[Postgres (metadata)]
+    DataVolumes[Local data/ (airflow, postgres, minio)]
+  end
+
+  subgraph Scrapers_Transforms
+    RSS[RSS scraper]
+    HTML[HTML scraper]
+    Clean[clean_html]
+    LangDetect[detect_language]
+  end
+
+  subgraph Docker
+    Compose[docker-compose.yml]
+    Dockerfile[Docker images]
+  end
+
+  FE -->|HTTP / REST| BE
+  BE -->|exposes routes| Routes
+  Routes --> Services
+  Services -->|calls| Scrapers_Transforms
+  Scrapers_Transforms -->|store raw articles| MinIO
+  Scrapers_Transforms -->|store metadata| Postgres
+  Services --> Utils
+  BE --> Event[EventBroadcaster] --> FE
+  BE -->|reads/writes| Postgres
+  BE -->|uploads/downloads| MinIO
+
+  Airflow -->|triggers| DAG1
+  Airflow --> DAG2
+  Airflow --> DAG3
+  DAG1 -->|ingest from scrapers| MinIO
+  DAG2 -->|transform in place| MinIO
+  DAG3 -->|aggregate analytics| MinIO & Postgres
+  Airflow -->|calls backend services / tasks| BE
+
+  Compose --> Dockerfile
+  Compose --> Postgres
+  Compose --> MinIO
+  Compose --> Airflow
+  Compose --> BE
+  Compose --> FE
+
+  DataVolumes --> Postgres
+  DataVolumes --> MinIO
+  DataVolumes --> Airflow
+
+  Tests --> BE
+  Tests --> Services
+
+  classDef storage fill:#f9f,stroke:#333,stroke-width:1px;
+  class MinIO,Postgres,DataVolumes storage;
+```

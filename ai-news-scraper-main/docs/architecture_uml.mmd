@@ -1,0 +1,57 @@
+
+classDiagram
+  class Frontend {
+    +Next.js
+  }
+  class Backend {
+    +FastAPI
+    +backend/main.py
+  }
+  class Routes
+  class Services
+  class Utils
+  class EventBroadcaster
+  class RSS_Scraper
+  class HTML_Scraper
+  class CleanHTML
+  class LangDetect
+  class Airflow
+  class BronzeDAG
+  class SilverDAG
+  class GoldDAG
+  class MinIO
+  class Postgres
+  class DockerCompose
+  class Tests
+
+  Frontend --> Backend : HTTP/REST
+  Backend --> Routes : exposes
+  Routes --> Services : calls
+  Services --> RSS_Scraper : uses
+  Services --> HTML_Scraper : uses
+  RSS_Scraper --> MinIO : store raw
+  HTML_Scraper --> MinIO : store raw
+  Services --> Postgres : store metadata
+  Services --> Utils : uses
+  Backend --> EventBroadcaster : emits
+  EventBroadcaster --> Frontend : pushes events
+
+  Airflow --> BronzeDAG
+  Airflow --> SilverDAG
+  Airflow --> GoldDAG
+  BronzeDAG --> MinIO : ingest
+  SilverDAG --> MinIO : transform
+  GoldDAG --> MinIO : aggregate
+  GoldDAG --> Postgres : write analytics
+  Airflow --> Backend : calls tasks/services
+
+  DockerCompose --> Backend
+  DockerCompose --> Frontend
+  DockerCompose --> Postgres
+  DockerCompose --> MinIO
+  DockerCompose --> Airflow
+  Tests --> Backend
+  Tests --> Services
+
+  classDef storage fill:#f9f,stroke:#333,stroke-width:1px
+  class MinIO, Postgres, DataVolumes storage
